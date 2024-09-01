@@ -33,4 +33,8 @@ interface ParsedElement extends cheerio.TextElement {
   };
 }
 
-export type { Match, Source, Team, Config, ParsedElement };
+interface GenericElement extends Element {
+  click: () => void;
+}
+
+export type { Match, Source, Team, Config, ParsedElement, GenericElement };

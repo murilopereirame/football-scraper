@@ -29,10 +29,19 @@ const generateCalendar = async (data: Source) => {
     "METHOD:PUBLISH\n",
   ];
 
-  const matches = [
-    ...(await loadMatches(data.team.resultsUrl, true, data.timeZone)),
-    ...(await loadMatches(data.team.fixturesUrl, false, data.timeZone)),
-  ];
+  let matches = null;
+  try {
+    matches = [
+      ...(await loadMatches(data.team.resultsUrl, true, data.timeZone)),
+      ...(await loadMatches(data.team.fixturesUrl, false, data.timeZone)),
+    ];
+  } catch (e) {
+    log(`Failed to load matches - ${e}`);
+  }
+
+  if (!matches) {
+    return;
+  }
 
   const filePath = `${data.team.name
     .normalize("NFD") // Normalize to decompose combined characters

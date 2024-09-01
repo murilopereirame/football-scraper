@@ -2,7 +2,7 @@ import puppeteer, { Page } from "puppeteer";
 import { sleep } from "./utils";
 import * as cheerio from "cheerio";
 import { DateTime } from "luxon";
-import { ParsedElement } from "./interfaces";
+import { GenericElement, ParsedElement } from "./interfaces";
 
 const getChampionship = (tree: cheerio.Root, id: string) => {
   const headerComponent = tree(`#${id}`)
@@ -15,9 +15,14 @@ const getChampionship = (tree: cheerio.Root, id: string) => {
 };
 
 const loadPageSource = async (url: string) => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [`--no-sandbox`, `--disable-gpu`, `--disable-dev-shm-usage`],
+  });
   const page = await browser.newPage();
-
+  await page.setUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+  );
   await page.goto(url);
   await sleep(5000);
   await loadGames(page);
@@ -40,11 +45,17 @@ const loadGames = async (page: Page) => {
     (
       await events[events.length - 1].evaluate((node) => node.textContent)
     )?.trim() ?? "";
-
+  let lastEvent = "";
   // Check if the Load More events button still dislayed and
   // if it's loading events from past year (aka Past Season)
-  while ((await page.$(".event__more")) && event.length === 12) {
-    await page.click(".event__more");
+  while (
+    (await (await page.$(".event__more"))?.isVisible()) &&
+    event.length === 12 &&
+    lastEvent != event
+  ) {
+    lastEvent = event;
+
+    page.$eval(".event__more", (elem) => (elem as GenericElement).click());
 
     await sleep(5000);
 
@@ -55,6 +66,10 @@ const loadGames = async (page: Page) => {
       (
         await events[events.length - 1].evaluate((node) => node.textContent)
       )?.trim() ?? "";
+
+    if (lastEvent === event) {
+      throw new Error("Failed to load matches. Loop detected");
+    }
   }
 };
 

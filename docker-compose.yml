@@ -1,0 +1,8 @@
+services:
+  calendar:
+    container_name: "futecal"
+    build: .
+    volumes:
+      - ./config.json:/app/config.json
+    ports:
+      - 9000:9000

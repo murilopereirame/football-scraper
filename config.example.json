@@ -6,7 +6,7 @@
       "fixturesUrl": "https://www.flashscore.com/team/***/***/fixtures/"
     }
   ],
-  "timeZone": "Europe/Berlin",
+  "timeZone": "utc",
   "runAtStartup": true,
   "port": 9000,
   "cron": "0 0 * * *"
