@@ -1,0 +1,13 @@
+{
+  "teams": [
+    {
+      "name": "",
+      "resultsUrl": "https://www.flashscore.com/team/***/***/results/",
+      "fixturesUrl": "https://www.flashscore.com/team/***/***/fixtures/"
+    }
+  ],
+  "timeZone": "Europe/Berlin",
+  "runAtStartup": true,
+  "port": 9000,
+  "cron": "0 0 * * *"
+}

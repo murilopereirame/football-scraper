@@ -1,11 +1,23 @@
 import type { WriteStream } from "fs";
 import { v5 as uuidv5 } from "uuid";
 import fs from "fs";
-import { generateSHA256Hash } from "./utils";
-import { loadFixtures, loadResults } from "./parser";
-import { Match, Source } from "./interfaces";
+import { generateSHA256Hash, log } from "./utils";
+import { loadMatches } from "./parser";
+import { Match, Source, Team } from "./interfaces";
+import path from "path";
 
 const CALENDAR_NAMESPACE = "d2178b5e-156c-4aa6-bfa4-8dc501cf330c";
+
+const generateForTeams = async (teams: Team[], timeZone: string) => {
+  for (const team of teams) {
+    log(`Generating calendar for ${team.name}`);
+    await generateCalendar({
+      team,
+      timeZone,
+    });
+    log(`Generated calendar for ${team.name}`);
+  }
+};
 
 const generateCalendar = async (data: Source) => {
   const header = [
@@ -17,11 +29,20 @@ const generateCalendar = async (data: Source) => {
     "METHOD:PUBLISH\n",
   ];
 
-  const results = await loadResults(data.resultsUrl);
-  const fixtures = await loadFixtures(data.fixturesUrl);
+  const matches = [
+    ...(await loadMatches(data.team.resultsUrl, true, data.timeZone)),
+    ...(await loadMatches(data.team.fixturesUrl, false, data.timeZone)),
+  ];
 
-  const filePath = `${data.team.toLowerCase()}.ics`;
-  const file = fs.createWriteStream(filePath);
+  const filePath = `${data.team.name
+    .normalize("NFD") // Normalize to decompose combined characters
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritical marks
+    .replace(/\s+/g, "-") // Replace spaces by -
+    .replace(/[^a-zA-Z0-9-]/g, "") // Remove anything that isn't a letter, number or dash
+    .toLowerCase()}.ics`;
+  const file = fs.createWriteStream(
+    path.resolve(__dirname, `public/${filePath}`)
+  );
 
   file.on("error", (err: any) => {
     console.error("Error writing to file", err);
@@ -29,12 +50,8 @@ const generateCalendar = async (data: Source) => {
 
   file.write(header.join(""));
 
-  for (const result of results) {
-    await writeMatch(result, file);
-  }
-
-  for (const fixture of fixtures) {
-    await writeMatch(fixture, file);
+  for (const match of matches) {
+    await writeMatch(match, file);
   }
 
   file.write("END:VCALENDAR");
@@ -65,4 +82,4 @@ const writeMatch = async (match: Match, file: WriteStream) => {
   file.write(lines.join(""));
 };
 
-export { generateCalendar };
+export { generateForTeams };

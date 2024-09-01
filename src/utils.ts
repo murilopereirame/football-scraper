@@ -1,3 +1,7 @@
+import fs from "fs";
+import { DateTime } from "luxon";
+import path from "path";
+
 async function generateSHA256Hash(message: string) {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
@@ -13,4 +17,18 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(() => resolve(true), ms));
 }
 
-export { generateSHA256Hash, sleep };
+const ensurePublicDirExists = () => {
+  if (!fs.existsSync(path.resolve(__dirname, "public"))) {
+    log("Creating public dir...");
+    return fs.mkdirSync(path.resolve(__dirname, "public"));
+  }
+
+  log("Public dir exists");
+};
+
+const log = (message: string) => {
+  const now = DateTime.now().toFormat("dd.LL.yyyy HH:mm:ss");
+  console.log(`[${now}] ${message}`);
+};
+
+export { generateSHA256Hash, sleep, ensurePublicDirExists, log };
